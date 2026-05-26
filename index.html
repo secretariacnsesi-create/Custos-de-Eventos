@@ -313,11 +313,11 @@ function limparForm(){
 }
 
 async function processarComIA(){
-  const texto=document.getElementById('textoBruto').value.trim();
-  if(!texto){toast('Cole ou carregue um texto primeiro.','error');return;}
-  document.getElementById('iaStatus').textContent='⏳ Processando…';
-  document.getElementById('iaResult').style.display='none';
-  try{
+    const texto = document.getElementById('textoBruto').value.trim();
+    if(!texto){toast('Cole ou carregue um texto primeiro.','error');return;}
+    document.getElementById('iaStatus').textContent='⏳ Processando com Gemini…';
+    
+    try {
     const prompt=`Você é um assistente especializado em prestação de contas institucionais.
 Analise o texto e extraia TODOS os registros financeiros encontrados.
 Retorne SOMENTE um array JSON válido, sem markdown, sem texto adicional.
@@ -326,24 +326,24 @@ Cada objeto deve ter exatamente estas chaves:
 Se um campo não for encontrado, use 0 para números e "" para strings.
 Texto para analisar:\n${texto}`;
 
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
-    });
-    const data=await res.json();
-    const raw=data.content?.find(b=>b.type==='text')?.text||'[]';
-    const match=raw.match(/\[[\s\S]*\]/);
-    if(!match) throw new Error('IA não retornou JSON válido.');
-    iaBuffer=JSON.parse(match[0]);
-    document.getElementById('iaResultPre').textContent=JSON.stringify(iaBuffer,null,2);
-    document.getElementById('iaResult').style.display='block';
-    document.getElementById('iaStatus').textContent=iaBuffer.length+' registro(s) extraído(s)';
-    toast(iaBuffer.length+' registro(s) extraído(s) pela IA','success');
-  }catch(e){
-    document.getElementById('iaStatus').textContent='';
-    toast('Erro na IA: '+e.message,'error');
-  }
+   async function processarComIA(){
+    const texto = document.getElementById('textoBruto').value.trim();
+    if(!texto){toast('Cole ou carregue um texto primeiro.','error');return;}
+    document.getElementById('iaStatus').textContent='⏳ Processando com Gemini…';
+    
+    try {
+    raw = raw.replace(/```json/g, '').replace(/```/g, '');
+        iaBuffer = JSON.parse(raw);
+        
+        document.getElementById('iaResultPre').textContent = JSON.stringify(iaBuffer, null, 2);
+        document.getElementById('iaResult').style.display = 'block';
+        document.getElementById('iaStatus').textContent = iaBuffer.length + ' registro(s) extraído(s)';
+        toast(iaBuffer.length + ' registro(s) extraído(s) com sucesso!', 'success');
+    } catch(e) {
+        document.getElementById('iaStatus').textContent = 'Erro';
+        toast('Erro na IA: ' + e.message, 'error');
+        console.error(e);
+    }
 }
 
 async function confirmarInsercaoIA(){

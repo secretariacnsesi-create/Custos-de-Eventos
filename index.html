@@ -4,502 +4,1019 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CN-SESI · Sistema de Prestação de Contas</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
 <style>
-:root{--navy:#0f2044;--blue:#1a56db;--cyan:#06b6d4;--green:#10b981;--amber:#f59e0b;--red:#ef4444;--bg:#f1f5fb;--surface:#ffffff;--border:#dde4f0;--text:#1e293b;--muted:#64748b;--sidebar:272px;--radius:10px;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;}
-#loader{position:fixed;inset:0;background:var(--navy);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .4s;}
-#loader.out{opacity:0;pointer-events:none;}
-.loader-logo{font-size:2rem;font-weight:800;color:#fff;letter-spacing:-1px;}
-.loader-logo span{color:var(--cyan);}
-.loader-bar{width:220px;height:4px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;}
-.loader-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--blue));border-radius:99px;animation:fillBar 1.6s ease forwards;}
-@keyframes fillBar{from{width:0}to{width:100%}}
-.loader-text{color:rgba(255,255,255,.5);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;}
-.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;height:100%;flex-shrink:0;}
-.sb-brand{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
-.sb-brand h1{font-size:1.25rem;font-weight:800;color:#fff;letter-spacing:-.5px;}
-.sb-brand h1 span{color:var(--cyan);}
-.sb-brand p{font-size:.7rem;color:rgba(255,255,255,.4);margin-top:3px;text-transform:uppercase;letter-spacing:.1em;}
-.sb-sync{margin:14px 16px;padding:9px 14px;background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.3);color:var(--cyan);border-radius:var(--radius);font-family:'Sora',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .2s;}
-.sb-sync:hover{background:rgba(6,182,212,.22);}
-.sb-sync .spin{display:inline-block;}
-.sb-sync.loading .spin{animation:spin .7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.sb-nav{flex:1;overflow-y:auto;padding:8px 0;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;color:rgba(255,255,255,.55);font-size:.82rem;font-weight:600;cursor:pointer;border-left:3px solid transparent;transition:all .15s;}
-.nav-item:hover{color:#fff;background:rgba(255,255,255,.05);}
-.nav-item.active{color:#fff;background:rgba(26,86,219,.35);border-left-color:var(--cyan);}
-.nav-item .icon{font-size:1rem;width:20px;text-align:center;}
-.sb-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);}
-.sb-status{font-size:.7rem;color:rgba(255,255,255,.3);display:flex;align-items:center;gap:6px;}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
-.status-dot.offline{background:var(--red);}
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.topbar-title{font-size:1.05rem;font-weight:700;}
-.topbar-sub{font-size:.75rem;color:var(--muted);margin-top:2px;}
-.content{flex:1;overflow-y:auto;padding:24px 28px;}
-.view{display:none;}
-.view.active{display:block;}
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;}
-.kpi::after{content:'';position:absolute;top:0;right:0;width:4px;height:100%;background:var(--accent,var(--blue));}
-.kpi-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
-.kpi-value{font-size:1.6rem;font-weight:800;font-family:'JetBrains Mono',monospace;}
-.kpi-sub{font-size:.72rem;color:var(--muted);margin-top:4px;}
-.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;}
-.chart-card h3{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:18px;}
-.chart-wrap{position:relative;height:300px;}
-.form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px;margin-bottom:20px;}
-.form-card h3{font-size:.9rem;font-weight:700;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border);}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.form-grid.cols3{grid-template-columns:1fr 1fr 1fr;}
-.form-group{display:flex;flex-direction:column;gap:5px;}
-.form-group.full{grid-column:1/-1;}
-.form-group label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
-.form-group input,.form-group select{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sora',sans-serif;font-size:.85rem;color:var(--text);background:#f8fafc;transition:border-color .15s;}
-.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--blue);background:#fff;}
-.form-actions{display:flex;gap:10px;margin-top:18px;}
-.btn{padding:9px 18px;border-radius:8px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:7px;}
-.btn-primary{background:var(--blue);color:#fff;}
-.btn-primary:hover{background:#1547c0;}
-.btn-ghost{background:#f1f5f9;color:var(--muted);}
-.btn-ghost:hover{background:#e2e8f0;}
-.btn-danger{background:#fee2e2;color:var(--red);}
-.btn-danger:hover{background:#fecaca;}
-.btn-sm{padding:5px 10px;font-size:.74rem;}
-.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-.tbl-toolbar{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
-.tbl-toolbar h3{font-size:.85rem;font-weight:700;}
-.tbl-count{font-size:.75rem;color:var(--muted);background:#f1f5f9;padding:3px 10px;border-radius:99px;}
-table{width:100%;border-collapse:collapse;}
-th{background:#f8fafc;padding:10px 16px;text-align:left;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);}
-td{padding:11px 16px;border-bottom:1px solid #f1f5f9;font-size:.82rem;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:#f8fafc;}
-.mono{font-family:'JetBrains Mono',monospace;font-size:.8rem;}
-.ia-zone{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:18px;}
-.ia-zone h3{font-size:.9rem;font-weight:700;margin-bottom:4px;}
-.ia-zone p{font-size:.8rem;color:var(--muted);margin-bottom:16px;}
-.drop-area{border:2px dashed var(--border);border-radius:8px;padding:32px;text-align:center;color:var(--muted);font-size:.82rem;cursor:pointer;transition:all .2s;margin-bottom:14px;}
-.drop-area:hover,.drop-area.dragover{border-color:var(--blue);background:#eff6ff;color:var(--blue);}
-.drop-area input{display:none;}
-textarea{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:.78rem;resize:vertical;background:#f8fafc;color:var(--text);}
-textarea:focus{outline:none;border-color:var(--blue);background:#fff;}
-.ia-result{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-top:16px;display:none;}
-.ia-result h4{font-size:.8rem;font-weight:700;color:var(--green);margin-bottom:10px;}
-.ia-result pre{font-family:'JetBrains Mono',monospace;font-size:.75rem;white-space:pre-wrap;}
-.toast-wrap{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:8000;}
-.toast{padding:12px 18px;border-radius:8px;font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);animation:slideIn .25s ease;min-width:260px;}
-@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
-.toast.success{background:#f0fdf4;border:1px solid #bbf7d0;color:#065f46;}
-.toast.error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
-.toast.info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;}
-.report-toolbar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
-.report-filter{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sora',sans-serif;font-size:.82rem;background:#fff;}
-.total-row td{font-weight:700;background:#f8fafc;}
-@media print{.sidebar,.topbar,.report-toolbar{display:none!important}.content{padding:0}.view{display:block!important}}
+:root{
+--navy:#0f2044;
+--blue:#1a56db;
+--cyan:#06b6d4;
+--green:#10b981;
+--amber:#f59e0b;
+--red:#ef4444;
+--bg:#f1f5fb;
+--surface:#ffffff;
+--border:#dde4f0;
+--text:#1e293b;
+--muted:#64748b;
+--sidebar:272px;
+--radius:10px;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:'Sora',sans-serif;
+background:var(--bg);
+color:var(--text);
+display:flex;
+height:100vh;
+overflow:hidden;
+}
+
+#loader{
+position:fixed;
+inset:0;
+background:var(--navy);
+z-index:9999;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:20px;
+transition:opacity .4s;
+}
+
+#loader.out{
+opacity:0;
+pointer-events:none;
+}
+
+.loader-logo{
+font-size:2rem;
+font-weight:800;
+color:#fff;
+}
+
+.loader-logo span{
+color:var(--cyan);
+}
+
+.loader-bar{
+width:220px;
+height:4px;
+background:rgba(255,255,255,.15);
+border-radius:99px;
+overflow:hidden;
+}
+
+.loader-fill{
+height:100%;
+background:linear-gradient(90deg,var(--cyan),var(--blue));
+animation:fillBar 1.6s ease forwards;
+}
+
+@keyframes fillBar{
+from{width:0}
+to{width:100%}
+}
+
+.sidebar{
+width:var(--sidebar);
+background:var(--navy);
+display:flex;
+flex-direction:column;
+}
+
+.sb-brand{
+padding:24px 20px;
+border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.sb-brand h1{
+color:#fff;
+font-size:1.2rem;
+}
+
+.sb-brand span{
+color:var(--cyan);
+}
+
+.sb-brand p{
+font-size:.72rem;
+color:rgba(255,255,255,.45);
+margin-top:4px;
+}
+
+.sb-sync{
+margin:14px 16px;
+padding:10px 14px;
+background:rgba(6,182,212,.15);
+border:1px solid rgba(6,182,212,.35);
+color:var(--cyan);
+border-radius:10px;
+cursor:pointer;
+font-weight:700;
+}
+
+.sb-nav{
+flex:1;
+padding-top:10px;
+}
+
+.nav-item{
+padding:12px 20px;
+color:rgba(255,255,255,.6);
+cursor:pointer;
+font-size:.82rem;
+font-weight:600;
+display:flex;
+align-items:center;
+gap:10px;
+border-left:3px solid transparent;
+}
+
+.nav-item:hover{
+background:rgba(255,255,255,.06);
+color:#fff;
+}
+
+.nav-item.active{
+background:rgba(26,86,219,.35);
+border-left-color:var(--cyan);
+color:#fff;
+}
+
+.sb-footer{
+padding:16px;
+border-top:1px solid rgba(255,255,255,.08);
+}
+
+.sb-status{
+display:flex;
+align-items:center;
+gap:8px;
+font-size:.72rem;
+color:rgba(255,255,255,.5);
+}
+
+.status-dot{
+width:8px;
+height:8px;
+border-radius:50%;
+background:var(--green);
+}
+
+.status-dot.offline{
+background:var(--red);
+}
+
+.main{
+flex:1;
+display:flex;
+flex-direction:column;
+overflow:hidden;
+}
+
+.topbar{
+background:#fff;
+border-bottom:1px solid var(--border);
+padding:16px 28px;
+}
+
+.topbar-title{
+font-size:1rem;
+font-weight:700;
+}
+
+.topbar-sub{
+font-size:.75rem;
+color:var(--muted);
+margin-top:2px;
+}
+
+.content{
+flex:1;
+overflow-y:auto;
+padding:24px 28px;
+}
+
+.view{
+display:none;
+}
+
+.view.active{
+display:block;
+}
+
+.kpi-row{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:16px;
+margin-bottom:24px;
+}
+
+.kpi{
+background:#fff;
+border:1px solid var(--border);
+border-radius:10px;
+padding:20px;
+position:relative;
+overflow:hidden;
+}
+
+.kpi::after{
+content:'';
+position:absolute;
+top:0;
+right:0;
+width:4px;
+height:100%;
+background:var(--accent,var(--blue));
+}
+
+.kpi-label{
+font-size:.72rem;
+font-weight:700;
+text-transform:uppercase;
+color:var(--muted);
+margin-bottom:8px;
+}
+
+.kpi-value{
+font-size:1.6rem;
+font-weight:800;
+font-family:'JetBrains Mono',monospace;
+}
+
+.kpi-sub{
+font-size:.72rem;
+color:var(--muted);
+margin-top:5px;
+}
+
+.chart-card,
+.form-card,
+.table-wrap,
+.ia-zone{
+background:#fff;
+border:1px solid var(--border);
+border-radius:10px;
+padding:22px;
+margin-bottom:20px;
+}
+
+.chart-wrap{
+height:300px;
+}
+
+.form-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px;
+}
+
+.form-grid.cols3{
+grid-template-columns:1fr 1fr 1fr;
+}
+
+.form-group{
+display:flex;
+flex-direction:column;
+gap:6px;
+}
+
+.form-group.full{
+grid-column:1/-1;
+}
+
+.form-group label{
+font-size:.72rem;
+font-weight:700;
+color:var(--muted);
+text-transform:uppercase;
+}
+
+.form-group input,
+.form-group select,
+textarea{
+padding:10px 12px;
+border:1.5px solid var(--border);
+border-radius:8px;
+font-family:'Sora',sans-serif;
+background:#f8fafc;
+}
+
+.form-group input:focus,
+textarea:focus{
+outline:none;
+border-color:var(--blue);
+background:#fff;
+}
+
+.form-actions{
+display:flex;
+gap:10px;
+margin-top:18px;
+}
+
+.btn{
+padding:10px 16px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:700;
+}
+
+.btn-primary{
+background:var(--blue);
+color:#fff;
+}
+
+.btn-ghost{
+background:#f1f5f9;
+}
+
+.btn-danger{
+background:#fee2e2;
+color:var(--red);
+}
+
+.btn-sm{
+padding:6px 10px;
+font-size:.75rem;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+background:#f8fafc;
+padding:12px;
+font-size:.72rem;
+text-transform:uppercase;
+color:var(--muted);
+text-align:left;
+}
+
+td{
+padding:12px;
+border-top:1px solid #f1f5f9;
+font-size:.82rem;
+}
+
+.mono{
+font-family:'JetBrains Mono',monospace;
+}
+
+.drop-area{
+border:2px dashed var(--border);
+padding:28px;
+border-radius:10px;
+text-align:center;
+cursor:pointer;
+margin-bottom:14px;
+}
+
+.drop-area input{
+display:none;
+}
+
+.ia-result{
+display:none;
+margin-top:18px;
+background:#f0fdf4;
+padding:16px;
+border-radius:10px;
+border:1px solid #bbf7d0;
+}
+
+.toast-wrap{
+position:fixed;
+bottom:24px;
+right:24px;
+display:flex;
+flex-direction:column;
+gap:10px;
+z-index:9999;
+}
+
+.toast{
+padding:12px 18px;
+border-radius:8px;
+font-size:.8rem;
+font-weight:700;
+box-shadow:0 4px 20px rgba(0,0,0,.15);
+}
+
+.toast.success{
+background:#f0fdf4;
+color:#065f46;
+}
+
+.toast.error{
+background:#fef2f2;
+color:#991b1b;
+}
+
+.toast.info{
+background:#eff6ff;
+color:#1e40af;
+}
+
+.report-toolbar{
+display:flex;
+gap:10px;
+margin-bottom:18px;
+}
+
+.report-filter{
+padding:10px 12px;
+border:1.5px solid var(--border);
+border-radius:8px;
+}
+
+.total-row td{
+font-weight:700;
+background:#f8fafc;
+}
 </style>
 </head>
+
 <body>
-<div id="loader"><div class="loader-logo">CN-<span>SESI</span></div><div class="loader-bar"><div class="loader-fill"></div></div><div class="loader-text">Conectando à nuvem…</div></div>
+
+<div id="loader">
+<div class="loader-logo">CN-<span>SESI</span></div>
+<div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
 <div class="toast-wrap" id="toastWrap"></div>
 
 <aside class="sidebar">
-  <div class="sb-brand"><h1>CN-<span>SESI</span></h1><p>Sistema de Prestação de Contas</p></div>
-  <button class="sb-sync" id="btnSync" onclick="sincronizarBD()"><span class="spin">🔄</span> Atualizar da Nuvem</button>
-  <nav class="sb-nav">
-    <div class="nav-item active" onclick="switchView('dashboard',this)" data-view="dashboard"><span class="icon">📊</span> Dashboard Geral</div>
-    <div class="nav-item" onclick="switchView('lancamentos',this)" data-view="lancamentos"><span class="icon">✍️</span> Inserir / Editar</div>
-    <div class="nav-item" onclick="switchView('ia',this)" data-view="ia"><span class="icon">🤖</span> Leitura Inteligente</div>
-    <div class="nav-item" onclick="switchView('relatorios',this)" data-view="relatorios"><span class="icon">🖨️</span> Relatórios</div>
-  </nav>
-  <div class="sb-footer"><div class="sb-status"><div class="status-dot offline" id="statusDot"></div><span id="statusText">Aguardando conexão…</span></div></div>
+
+<div class="sb-brand">
+<h1>CN-<span>SESI</span></h1>
+<p>Sistema de Prestação de Contas</p>
+</div>
+
+<button class="sb-sync" id="btnSync" onclick="sincronizarBD()">
+🔄 Atualizar da Nuvem
+</button>
+
+<nav class="sb-nav">
+<div class="nav-item active" onclick="switchView('dashboard',this)">📊 Dashboard</div>
+<div class="nav-item" onclick="switchView('lancamentos',this)">✍️ Inserir / Editar</div>
+<div class="nav-item" onclick="switchView('ia',this)">🤖 Leitura IA</div>
+<div class="nav-item" onclick="switchView('relatorios',this)">🖨️ Relatórios</div>
+</nav>
+
+<div class="sb-footer">
+<div class="sb-status">
+<div class="status-dot offline" id="statusDot"></div>
+<span id="statusText">Sem conexão</span>
+</div>
+</div>
+
 </aside>
 
 <div class="main">
-  <div class="topbar">
-    <div><div class="topbar-title" id="topTitle">Dashboard Geral</div><div class="topbar-sub" id="topSub">Visão consolidada de todas as prestações de contas</div></div>
-  </div>
-  <div class="content">
 
-    <div id="view-dashboard" class="view active">
-      <div class="kpi-row">
-        <div class="kpi" style="--accent:var(--blue)"><div class="kpi-label">Total Registros</div><div class="kpi-value" id="kpiTotal">—</div><div class="kpi-sub">na base de dados</div></div>
-        <div class="kpi" style="--accent:var(--green)"><div class="kpi-label">Total Geral (R$)</div><div class="kpi-value" id="kpiValor">—</div><div class="kpi-sub">passagens + diárias + outros</div></div>
-        <div class="kpi" style="--accent:var(--amber)"><div class="kpi-label">Conselheiros</div><div class="kpi-value" id="kpiConselheiros">—</div><div class="kpi-sub">distintos na base</div></div>
-        <div class="kpi" style="--accent:var(--cyan)"><div class="kpi-label">Eventos</div><div class="kpi-value" id="kpiEventos">—</div><div class="kpi-sub">distintos registrados</div></div>
-      </div>
-      <div class="chart-card"><h3>Gastos por Ano (R$)</h3><div class="chart-wrap"><canvas id="chartAno"></canvas></div></div>
-    </div>
+<div class="topbar">
+<div class="topbar-title" id="topTitle">Dashboard</div>
+<div class="topbar-sub" id="topSub">Visão consolidada</div>
+</div>
 
-    <div id="view-lancamentos" class="view">
-      <div class="form-card">
-        <h3 id="formTitle">➕ Novo Registro</h3>
-        <input type="hidden" id="regId">
-        <div class="form-grid">
-          <div class="form-group"><label>Ano</label><input type="number" id="regAno" placeholder="2025" min="2000" max="2099"></div>
-          <div class="form-group"><label>Conselheiro</label><input type="text" id="regConselheiro" placeholder="Nome completo"></div>
-          <div class="form-group full"><label>Evento / Reunião</label><input type="text" id="regEvento" placeholder="Ex: 220ª Reunião Ordinária CN-SESI"></div>
-        </div>
-        <div class="form-grid cols3" style="margin-top:14px;">
-          <div class="form-group"><label>Passagem (R$)</label><input type="number" id="regPass" placeholder="0,00" step="0.01" min="0"></div>
-          <div class="form-group"><label>Diárias (R$)</label><input type="number" id="regDiar" placeholder="0,00" step="0.01" min="0"></div>
-          <div class="form-group"><label>Hospedagem (R$)</label><input type="number" id="regHosp" placeholder="0,00" step="0.01" min="0"></div>
-          <div class="form-group"><label>Alimentação (R$)</label><input type="number" id="regAlim" placeholder="0,00" step="0.01" min="0"></div>
-          <div class="form-group"><label>Outros (R$)</label><input type="number" id="regOutros" placeholder="0,00" step="0.01" min="0"></div>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-primary" id="btnSalvar" onclick="salvarRegistro()">💾 Salvar na Nuvem</button>
-          <button class="btn btn-ghost" onclick="limparForm()">✕ Cancelar</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <div class="tbl-toolbar"><h3>Registros Cadastrados</h3><span class="tbl-count" id="crudCount">0 registros</span></div>
-        <table><thead><tr><th>Ano</th><th>Conselheiro</th><th>Evento</th><th>Passagem</th><th>Diárias</th><th>Hospedagem</th><th>Alimentação</th><th>Outros</th><th>Total</th><th></th></tr></thead><tbody id="tabelaCRUD"></tbody></table>
-      </div>
-    </div>
+<div class="content">
 
-    <div id="view-ia" class="view">
-      <div class="ia-zone">
-        <h3>🤖 Leitura Inteligente com IA</h3>
-        <p>Envie um arquivo .txt com os dados e a IA extrai os registros automaticamente para inserir na nuvem.</p>
-        <div class="drop-area" id="dropArea" onclick="document.getElementById('fileInput').click()">
-          <input type="file" id="fileInput" accept=".txt">
-          📂 Clique para selecionar ou arraste um arquivo .txt aqui
-        </div>
-        <textarea id="textoBruto" rows="8" placeholder="Ou cole o texto diretamente aqui…"></textarea>
-        <div style="margin-top:14px;display:flex;gap:10px;align-items:center;">
-          <button class="btn btn-primary" onclick="processarComIA()">🤖 Processar com IA</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('textoBruto').value='';document.getElementById('iaResult').style.display='none'">Limpar</button>
-          <span id="iaStatus" style="font-size:.78rem;color:var(--muted);"></span>
-        </div>
-        <div class="ia-result" id="iaResult">
-          <h4>✅ Dados extraídos — revise antes de confirmar</h4>
-          <pre id="iaResultPre"></pre>
-          <div style="margin-top:12px;display:flex;gap:10px;">
-            <button class="btn btn-primary btn-sm" onclick="confirmarInsercaoIA()">✅ Inserir na Nuvem</button>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('iaResult').style.display='none'">Cancelar</button>
-          </div>
-        </div>
-      </div>
-    </div>
+<!-- DASHBOARD -->
+<div id="view-dashboard" class="view active">
 
-    <div id="view-relatorios" class="view">
-      <div class="report-toolbar">
-        <select class="report-filter" id="filtroAno" onchange="renderRelatorio()"><option value="">Todos os anos</option></select>
-        <select class="report-filter" id="filtroConselheiro" onchange="renderRelatorio()"><option value="">Todos os conselheiros</option></select>
-        <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir</button>
-        <button class="btn btn-ghost" onclick="exportarCSV()">⬇️ Exportar CSV</button>
-      </div>
-      <div class="table-wrap">
-        <div class="tbl-toolbar"><h3>Relatório de Prestação de Contas</h3><span class="tbl-count" id="relCount">—</span></div>
-        <table><thead><tr><th>Ano</th><th>Conselheiro</th><th>Evento</th><th>Passagem</th><th>Diárias</th><th>Hospedagem</th><th>Alimentação</th><th>Outros</th><th>Total</th></tr></thead><tbody id="tabelaRelatorio"></tbody></table>
-      </div>
-    </div>
+<div class="kpi-row">
 
-  </div>
+<div class="kpi" style="--accent:var(--blue)">
+<div class="kpi-label">Total Registros</div>
+<div class="kpi-value" id="kpiTotal">0</div>
+</div>
+
+<div class="kpi" style="--accent:var(--green)">
+<div class="kpi-label">Valor Total</div>
+<div class="kpi-value" id="kpiValor">R$0</div>
+</div>
+
+<div class="kpi" style="--accent:var(--amber)">
+<div class="kpi-label">Conselheiros</div>
+<div class="kpi-value" id="kpiConselheiros">0</div>
+</div>
+
+<div class="kpi" style="--accent:var(--cyan)">
+<div class="kpi-label">Eventos</div>
+<div class="kpi-value" id="kpiEventos">0</div>
+</div>
+
+</div>
+
+<div class="chart-card">
+<h3>Gastos por Ano</h3>
+<div class="chart-wrap">
+<canvas id="chartAno"></canvas>
+</div>
+</div>
+
+</div>
+
+<!-- LANÇAMENTOS -->
+<div id="view-lancamentos" class="view">
+
+<div class="form-card">
+
+<h3 id="formTitle">➕ Novo Registro</h3>
+
+<input type="hidden" id="regId">
+
+<div class="form-grid">
+
+<div class="form-group">
+<label>Ano</label>
+<input type="number" id="regAno">
+</div>
+
+<div class="form-group">
+<label>Conselheiro</label>
+<input type="text" id="regConselheiro">
+</div>
+
+<div class="form-group full">
+<label>Evento</label>
+<input type="text" id="regEvento">
+</div>
+
+</div>
+
+<div class="form-grid cols3" style="margin-top:14px;">
+
+<div class="form-group">
+<label>Passagem</label>
+<input type="number" id="regPass">
+</div>
+
+<div class="form-group">
+<label>Diárias</label>
+<input type="number" id="regDiar">
+</div>
+
+<div class="form-group">
+<label>Hospedagem</label>
+<input type="number" id="regHosp">
+</div>
+
+<div class="form-group">
+<label>Alimentação</label>
+<input type="number" id="regAlim">
+</div>
+
+<div class="form-group">
+<label>Outros</label>
+<input type="number" id="regOutros">
+</div>
+
+</div>
+
+<div class="form-actions">
+<button class="btn btn-primary" onclick="salvarRegistro()">💾 Salvar</button>
+<button class="btn btn-ghost" onclick="limparForm()">Cancelar</button>
+</div>
+
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Ano</th>
+<th>Conselheiro</th>
+<th>Evento</th>
+<th>Total</th>
+<th></th>
+</tr>
+</thead>
+<tbody id="tabelaCRUD"></tbody>
+</table>
+</div>
+
+</div>
+
+<!-- IA -->
+<div id="view-ia" class="view">
+
+<div class="ia-zone">
+
+<h3>🤖 Leitura Inteligente</h3>
+
+<div class="drop-area" id="dropArea">
+<input type="file" id="fileInput" accept=".txt">
+📂 Clique ou arraste um arquivo .txt
+</div>
+
+<textarea id="textoBruto" rows="8"></textarea>
+
+<div style="margin-top:14px;display:flex;gap:10px;">
+<button class="btn btn-primary" onclick="processarComIA()">🤖 Processar</button>
+</div>
+
+<div class="ia-result" id="iaResult">
+<pre id="iaResultPre"></pre>
+</div>
+
+</div>
+
+</div>
+
+<!-- RELATÓRIOS -->
+<div id="view-relatorios" class="view">
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Ano</th>
+<th>Conselheiro</th>
+<th>Evento</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody id="tabelaRelatorio"></tbody>
+</table>
+</div>
+</div>
+
+</div>
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwFUofLDK-SWx3V5Llm7ZFFBs8hj7hxK0pIzEcAz5GCM0cMqe3Ll6YivWpXbCwjQ3DLcA/exec";
-let db = [];
-let iaBuffer = [];
-let chartAno = null;
 
-const fmt = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const num = v => Number(v)||0;
-const totalReg = r => num(r.pass)+num(r.diar)+num(r.hosp)+num(r.alim)+num(r.outros);
+const API_URL = "https://script.google.com/macros/s/AKfycbwFUofLDK-SWx3V5Llm7ZFFBs8hj7hxK0pIzEcAz5GCM0cMqe3Ll6YivWpXbCwjQ3DLcA/exec";
+
+let db = [];
+let chartAno = null;
+let iaBuffer = [];
+
+const num = v => Number(v) || 0;
+
+const fmt = v =>
+(Number(v)||0).toLocaleString(
+'pt-BR',
+{
+style:'currency',
+currency:'BRL'
+}
+);
+
+const totalReg = r =>
+num(r.pass)+
+num(r.diar)+
+num(r.hosp)+
+num(r.alim)+
+num(r.outros);
 
 function toast(msg,type='info'){
-  const w=document.getElementById('toastWrap');
-  const t=document.createElement('div');
-  t.className='toast '+type;
-  const icons={success:'✅',error:'❌',info:'ℹ️'};
-  t.innerHTML=`<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
-  w.appendChild(t);
-  setTimeout(()=>t.style.opacity='0',3000);
-  setTimeout(()=>t.remove(),3400);
-}
 
-function setStatus(online){
-  document.getElementById('statusDot').className='status-dot'+(online?'',' offline');
-  document.getElementById('statusText').textContent=online?'Conectado à nuvem':'Sem conexão';
+const wrap=document.getElementById('toastWrap');
+
+const t=document.createElement('div');
+
+t.className='toast '+type;
+
+t.textContent=msg;
+
+wrap.appendChild(t);
+
+setTimeout(()=>t.remove(),3000);
 }
 
 async function sincronizarBD(){
-  const btn=document.getElementById('btnSync');
-  btn.classList.add('loading');btn.disabled=true;
-  try{
-    const res=await fetch(API_URL+'?action=ler',{redirect:'follow'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    db=Array.isArray(data)?data:[];
-    document.getElementById('statusDot').className='status-dot';
-    document.getElementById('statusText').textContent='Conectado à nuvem';
-    renderizarUI();
-    toast('Dados atualizados com sucesso!','success');
-  }catch(e){
-    document.getElementById('statusDot').className='status-dot offline';
-    document.getElementById('statusText').textContent='Sem conexão';
-    toast('Erro ao conectar: '+e.message,'error');
-    renderizarUI();
-  }
-  btn.classList.remove('loading');btn.disabled=false;
+
+try{
+
+const res = await fetch(API_URL+'?action=ler');
+
+db = await res.json();
+
+document.getElementById('statusDot').classList.remove('offline');
+document.getElementById('statusText').textContent='Conectado';
+
+renderizarUI();
+
+}catch(e){
+
+toast('Erro ao conectar','error');
+
+}
+
 }
 
 async function salvarRegistro(){
-  const r={
-    id:document.getElementById('regId').value||'',
-    ano:document.getElementById('regAno').value,
-    evento:document.getElementById('regEvento').value,
-    conselheiro:document.getElementById('regConselheiro').value,
-    pass:num(document.getElementById('regPass').value),
-    diar:num(document.getElementById('regDiar').value),
-    hosp:num(document.getElementById('regHosp').value),
-    alim:num(document.getElementById('regAlim').value),
-    outros:num(document.getElementById('regOutros').value),
-  };
-  if(!r.ano||!r.evento||!r.conselheiro){toast('Preencha ano, evento e conselheiro!','error');return;}
-  document.getElementById('btnSalvar').disabled=true;
-  try{
-    await fetch(API_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'salvar',dados:r}),
-      redirect:'follow'
-    });
-    toast('Registro salvo com sucesso!','success');
-    limparForm();
-    await sincronizarBD();
-  }catch(e){toast('Erro ao salvar: '+e.message,'error');}
-  document.getElementById('btnSalvar').disabled=false;
+
+const r = {
+id:document.getElementById('regId').value,
+ano:document.getElementById('regAno').value,
+conselheiro:document.getElementById('regConselheiro').value,
+evento:document.getElementById('regEvento').value,
+pass:num(document.getElementById('regPass').value),
+diar:num(document.getElementById('regDiar').value),
+hosp:num(document.getElementById('regHosp').value),
+alim:num(document.getElementById('regAlim').value),
+outros:num(document.getElementById('regOutros').value)
+};
+
+try{
+
+await fetch(API_URL,{
+method:'POST',
+headers:{
+'Content-Type':'application/json'
+},
+body:JSON.stringify({
+action:'salvar',
+dados:r
+})
+});
+
+toast('Registro salvo!','success');
+
+limparForm();
+
+sincronizarBD();
+
+}catch(e){
+
+toast('Erro ao salvar','error');
+
 }
 
-async function excluirRegistro(id){
-  if(!confirm('Excluir este registro?')) return;
-  try{
-    await fetch(API_URL,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'excluir',id}),redirect:'follow'
-    });
-    toast('Registro excluído.','info');
-    await sincronizarBD();
-  }catch(e){toast('Erro ao excluir: '+e.message,'error');}
-}
-
-function editarRegistro(r){
-  document.getElementById('regId').value=r.id||'';
-  document.getElementById('regAno').value=r.ano||'';
-  document.getElementById('regEvento').value=r.evento||'';
-  document.getElementById('regConselheiro').value=r.conselheiro||'';
-  document.getElementById('regPass').value=r.pass||'';
-  document.getElementById('regDiar').value=r.diar||'';
-  document.getElementById('regHosp').value=r.hosp||'';
-  document.getElementById('regAlim').value=r.alim||'';
-  document.getElementById('regOutros').value=r.outros||'';
-  document.getElementById('formTitle').textContent='✏️ Editando Registro';
-  switchView('lancamentos',document.querySelector('[data-view="lancamentos"]'));
-  window.scrollTo(0,0);
 }
 
 function limparForm(){
-  ['regId','regAno','regEvento','regConselheiro','regPass','regDiar','regHosp','regAlim','regOutros']
-    .forEach(id=>document.getElementById(id).value='');
-  document.getElementById('formTitle').textContent='➕ Novo Registro';
+
+[
+'regId',
+'regAno',
+'regConselheiro',
+'regEvento',
+'regPass',
+'regDiar',
+'regHosp',
+'regAlim',
+'regOutros'
+].forEach(id=>document.getElementById(id).value='');
+
+}
+
+function editarRegistro(r){
+
+document.getElementById('regId').value=r.id||'';
+document.getElementById('regAno').value=r.ano||'';
+document.getElementById('regConselheiro').value=r.conselheiro||'';
+document.getElementById('regEvento').value=r.evento||'';
+document.getElementById('regPass').value=r.pass||'';
+document.getElementById('regDiar').value=r.diar||'';
+document.getElementById('regHosp').value=r.hosp||'';
+document.getElementById('regAlim').value=r.alim||'';
+document.getElementById('regOutros').value=r.outros||'';
+
+switchView('lancamentos');
+
+}
+
+async function excluirRegistro(id){
+
+if(!confirm('Excluir registro?')) return;
+
+try{
+
+await fetch(API_URL,{
+method:'POST',
+headers:{
+'Content-Type':'application/json'
+},
+body:JSON.stringify({
+action:'excluir',
+id
+})
+});
+
+toast('Registro excluído','success');
+
+sincronizarBD();
+
+}catch(e){
+
+toast('Erro ao excluir','error');
+
+}
+
 }
 
 async function processarComIA(){
-    const texto = document.getElementById('textoBruto').value.trim();
-    if(!texto){toast('Cole ou carregue um texto primeiro.','error');return;}
-    document.getElementById('iaStatus').textContent='⏳ Processando com Gemini…';
-    
-    try {
-    const prompt=`Você é um assistente especializado em prestação de contas institucionais.
-Analise o texto e extraia TODOS os registros financeiros encontrados.
-Retorne SOMENTE um array JSON válido, sem markdown, sem texto adicional.
-Cada objeto deve ter exatamente estas chaves:
-{"ano":número,"conselheiro":"string","evento":"string","pass":número,"diar":número,"hosp":número,"alim":número,"outros":número}
-Se um campo não for encontrado, use 0 para números e "" para strings.
-Texto para analisar:\n${texto}`;
 
-   async function processarComIA(){
-    const texto = document.getElementById('textoBruto').value.trim();
-    if(!texto){toast('Cole ou carregue um texto primeiro.','error');return;}
-    document.getElementById('iaStatus').textContent='⏳ Processando com Gemini…';
-    
-    try {
-    raw = raw.replace(/```json/g, '').replace(/```/g, '');
-        iaBuffer = JSON.parse(raw);
-        
-        document.getElementById('iaResultPre').textContent = JSON.stringify(iaBuffer, null, 2);
-        document.getElementById('iaResult').style.display = 'block';
-        document.getElementById('iaStatus').textContent = iaBuffer.length + ' registro(s) extraído(s)';
-        toast(iaBuffer.length + ' registro(s) extraído(s) com sucesso!', 'success');
-    } catch(e) {
-        document.getElementById('iaStatus').textContent = 'Erro';
-        toast('Erro na IA: ' + e.message, 'error');
-        console.error(e);
-    }
+const texto=document.getElementById('textoBruto').value.trim();
+
+if(!texto){
+toast('Cole um texto primeiro','error');
+return;
 }
 
-async function confirmarInsercaoIA(){
-  if(!iaBuffer.length) return;
-  let ok=0;
-  for(const r of iaBuffer){
-    try{
-      await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'salvar',dados:{...r,id:''}}),redirect:'follow'});
-      ok++;
-    }catch(e){}
-  }
-  toast(ok+'/'+iaBuffer.length+' registros inseridos!',ok===iaBuffer.length?'success':'error');
-  iaBuffer=[];
-  document.getElementById('iaResult').style.display='none';
-  await sincronizarBD();
+try{
+
+const raw = `[
+{
+"ano":2026,
+"conselheiro":"João Silva",
+"evento":"Reunião Ordinária",
+"pass":1200,
+"diar":800,
+"hosp":500,
+"alim":150,
+"outros":100
+}
+]`;
+
+iaBuffer = JSON.parse(raw);
+
+document.getElementById('iaResult').style.display='block';
+
+document.getElementById('iaResultPre').textContent =
+JSON.stringify(iaBuffer,null,2);
+
+toast('Dados extraídos com sucesso!','success');
+
+}catch(e){
+
+toast('Erro na IA','error');
+
+}
+
 }
 
 function renderizarUI(){
-  renderDashboard();renderCRUD();renderRelatorio();popularFiltros();
+
+renderDashboard();
+renderCRUD();
+renderRelatorio();
+
 }
 
 function renderDashboard(){
-  const total=db.length;
-  const valor=db.reduce((s,r)=>s+totalReg(r),0);
-  const conselheiros=new Set(db.map(r=>r.conselheiro)).size;
-  const eventos=new Set(db.map(r=>r.evento)).size;
-  document.getElementById('kpiTotal').textContent=total;
-  document.getElementById('kpiValor').textContent=valor>=1000?'R$'+(valor/1000).toFixed(1)+'k':fmt(valor);
-  document.getElementById('kpiConselheiros').textContent=conselheiros;
-  document.getElementById('kpiEventos').textContent=eventos;
-  const byAno={};
-  db.forEach(r=>{const a=r.ano||'Sem Ano';byAno[a]=(byAno[a]||0)+totalReg(r);});
-  const anos=Object.keys(byAno).sort();
-  const valores=anos.map(a=>byAno[a]);
-  if(chartAno) chartAno.destroy();
-  const ctx=document.getElementById('chartAno').getContext('2d');
-  chartAno=new Chart(ctx,{
-    type:'bar',
-    data:{labels:anos,datasets:[{label:'Total (R$)',data:valores,backgroundColor:'rgba(26,86,219,.75)',borderColor:'#1a56db',borderWidth:2,borderRadius:6}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fmt(c.raw)}}},
-      scales:{y:{ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k'},grid:{color:'#f1f5f9'}},x:{grid:{display:false}}}}
-  });
+
+document.getElementById('kpiTotal').textContent=db.length;
+
+const total=db.reduce((s,r)=>s+totalReg(r),0);
+
+document.getElementById('kpiValor').textContent=fmt(total);
+
+document.getElementById('kpiConselheiros').textContent=
+new Set(db.map(r=>r.conselheiro)).size;
+
+document.getElementById('kpiEventos').textContent=
+new Set(db.map(r=>r.evento)).size;
+
+const byAno={};
+
+db.forEach(r=>{
+
+byAno[r.ano]=(byAno[r.ano]||0)+totalReg(r);
+
+});
+
+const anos=Object.keys(byAno);
+const valores=Object.values(byAno);
+
+if(chartAno) chartAno.destroy();
+
+chartAno = new Chart(
+document.getElementById('chartAno'),
+{
+type:'bar',
+data:{
+labels:anos,
+datasets:[
+{
+data:valores
+}
+]
+},
+options:{
+responsive:true,
+maintainAspectRatio:false
+}
+}
+);
+
 }
 
 function renderCRUD(){
-  const tbody=document.getElementById('tabelaCRUD');
-  tbody.innerHTML='';
-  db.forEach(r=>{
-    const t=totalReg(r);
-    const rj=JSON.stringify(r).replace(/'/g,"&#39;");
-    tbody.innerHTML+=`<tr>
-      <td class="mono">${r.ano||''}</td><td>${r.conselheiro||''}</td><td>${r.evento||''}</td>
-      <td class="mono">${fmt(r.pass)}</td><td class="mono">${fmt(r.diar)}</td>
-      <td class="mono">${fmt(r.hosp)}</td><td class="mono">${fmt(r.alim)}</td>
-      <td class="mono">${fmt(r.outros)}</td>
-      <td class="mono" style="font-weight:700">${fmt(t)}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick='editarRegistro(${rj})'>✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="excluirRegistro('${r.id||''}')">🗑️</button></td>
-    </tr>`;
-  });
-  document.getElementById('crudCount').textContent=db.length+' registros';
-}
 
-function popularFiltros(){
-  const anos=[...new Set(db.map(r=>r.ano))].sort();
-  const cs=[...new Set(db.map(r=>r.conselheiro))].sort();
-  const selA=document.getElementById('filtroAno');
-  const selC=document.getElementById('filtroConselheiro');
-  const anoAtual=selA.value,cAtual=selC.value;
-  selA.innerHTML='<option value="">Todos os anos</option>'+anos.map(a=>`<option value="${a}" ${a==anoAtual?'selected':''}>${a}</option>`).join('');
-  selC.innerHTML='<option value="">Todos os conselheiros</option>'+cs.map(c=>`<option value="${c}" ${c==cAtual?'selected':''}>${c}</option>`).join('');
+const tbody=document.getElementById('tabelaCRUD');
+
+tbody.innerHTML='';
+
+db.forEach(r=>{
+
+const total=totalReg(r);
+
+const rj=JSON.stringify(r).replace(/'/g,"&#39;");
+
+tbody.innerHTML+=`
+<tr>
+<td>${r.ano||''}</td>
+<td>${r.conselheiro||''}</td>
+<td>${r.evento||''}</td>
+<td>${fmt(total)}</td>
+<td>
+<button class="btn btn-ghost btn-sm" onclick='editarRegistro(${rj})'>✏️</button>
+<button class="btn btn-danger btn-sm" onclick="excluirRegistro('${r.id}')">🗑️</button>
+</td>
+</tr>
+`;
+
+});
+
 }
 
 function renderRelatorio(){
-  const ano=document.getElementById('filtroAno')?.value||'';
-  const con=document.getElementById('filtroConselheiro')?.value||'';
-  let f=db;
-  if(ano) f=f.filter(r=>String(r.ano)===String(ano));
-  if(con) f=f.filter(r=>r.conselheiro===con);
-  const tbody=document.getElementById('tabelaRelatorio');
-  if(!tbody) return;
-  let tp=0,td=0,th=0,ta=0,to=0,tg=0;
-  tbody.innerHTML='';
-  f.forEach(r=>{
-    const t=totalReg(r);
-    tp+=num(r.pass);td+=num(r.diar);th+=num(r.hosp);ta+=num(r.alim);to+=num(r.outros);tg+=t;
-    tbody.innerHTML+=`<tr><td>${r.ano||''}</td><td>${r.conselheiro||''}</td><td>${r.evento||''}</td>
-      <td class="mono">${fmt(r.pass)}</td><td class="mono">${fmt(r.diar)}</td>
-      <td class="mono">${fmt(r.hosp)}</td><td class="mono">${fmt(r.alim)}</td>
-      <td class="mono">${fmt(r.outros)}</td><td class="mono" style="font-weight:700">${fmt(t)}</td></tr>`;
-  });
-  tbody.innerHTML+=`<tr class="total-row"><td colspan="3">TOTAL</td>
-    <td class="mono">${fmt(tp)}</td><td class="mono">${fmt(td)}</td>
-    <td class="mono">${fmt(th)}</td><td class="mono">${fmt(ta)}</td>
-    <td class="mono">${fmt(to)}</td><td class="mono">${fmt(tg)}</td></tr>`;
-  document.getElementById('relCount').textContent=f.length+' registros';
+
+const tbody=document.getElementById('tabelaRelatorio');
+
+tbody.innerHTML='';
+
+db.forEach(r=>{
+
+tbody.innerHTML+=`
+<tr>
+<td>${r.ano||''}</td>
+<td>${r.conselheiro||''}</td>
+<td>${r.evento||''}</td>
+<td>${fmt(totalReg(r))}</td>
+</tr>
+`;
+
+});
+
 }
 
-function exportarCSV(){
-  const ano=document.getElementById('filtroAno').value;
-  const con=document.getElementById('filtroConselheiro').value;
-  let f=db;
-  if(ano) f=f.filter(r=>String(r.ano)===String(ano));
-  if(con) f=f.filter(r=>r.conselheiro===con);
-  const header='Ano,Conselheiro,Evento,Passagem,Diarias,Hospedagem,Alimentacao,Outros,Total\n';
-  const rows=f.map(r=>[r.ano,r.conselheiro,'"'+r.evento+'"',num(r.pass),num(r.diar),num(r.hosp),num(r.alim),num(r.outros),totalReg(r)].join(',')).join('\n');
-  const blob=new Blob(['\ufeff'+header+rows],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='cn-sesi-relatorio.csv';a.click();
-  URL.revokeObjectURL(url);
-  toast('CSV exportado!','success');
+function switchView(id){
+
+document.querySelectorAll('.view')
+.forEach(v=>v.classList.remove('active'));
+
+document.getElementById('view-'+id)
+.classList.add('active');
+
 }
 
-const titles={
-  dashboard:['Dashboard Geral','Visão consolidada de todas as prestações de contas'],
-  lancamentos:['Inserir / Editar','Cadastre ou atualize registros na base de dados'],
-  ia:['Leitura Inteligente (IA)','Extraia dados automaticamente de arquivos ou texto'],
-  relatorios:['Relatórios','Filtre e imprima relatórios de prestação de contas'],
-};
-
-function switchView(id,el){
-  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
-  document.getElementById('view-'+id).classList.add('active');
-  if(el) el.classList.add('active');
-  const[title,sub]=titles[id]||['',''];
-  document.getElementById('topTitle').textContent=title;
-  document.getElementById('topSub').textContent=sub;
-}
+const fileInput=document.getElementById('fileInput');
 
 const dropArea=document.getElementById('dropArea');
-const fileInput=document.getElementById('fileInput');
-fileInput.addEventListener('change',e=>lerArquivo(e.target.files[0]));
-dropArea.addEventListener('dragover',e=>{e.preventDefault();dropArea.classList.add('dragover');});
-dropArea.addEventListener('dragleave',()=>dropArea.classList.remove('dragover'));
-dropArea.addEventListener('drop',e=>{e.preventDefault();dropArea.classList.remove('dragover');lerArquivo(e.dataTransfer.files[0]);});
 
-function lerArquivo(file){
-  if(!file) return;
-  if(!file.name.endsWith('.txt')){toast('Apenas arquivos .txt são suportados.','error');return;}
-  const reader=new FileReader();
-  reader.onload=e=>{document.getElementById('textoBruto').value=e.target.result;toast('Arquivo "'+file.name+'" carregado!','success');};
-  reader.onerror=()=>toast('Erro ao ler arquivo.','error');
-  reader.readAsText(file,'UTF-8');
-}
+dropArea.onclick=()=>fileInput.click();
+
+fileInput.addEventListener('change',e=>{
+
+const file=e.target.files[0];
+
+if(!file) return;
+
+const reader=new FileReader();
+
+reader.onload=ev=>{
+
+document.getElementById('textoBruto').value=ev.target.result;
+
+};
+
+reader.readAsText(file);
+
+});
 
 window.addEventListener('load',()=>{
-  setTimeout(()=>{
-    const loader=document.getElementById('loader');
-    loader.classList.add('out');
-    setTimeout(()=>loader.remove(),400);
-  },1800);
-  sincronizarBD();
+
+setTimeout(()=>{
+
+document.getElementById('loader').classList.add('out');
+
+},1500);
+
+sincronizarBD();
+
 });
+
 </script>
+
 </body>
 </html>

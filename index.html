@@ -71,39 +71,64 @@
         </div>
     </div>
 
-    <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwFUofLDK-SWx3V5Llm7ZFFBs8hj7hxK0pIzEcAz5GCM0cMqe3Ll6YivWpXbCwjQ3DLcA/exec";
-        const GEMINI_API_KEY = "AIzaSyBpd8uxPnEdjc1073sYHBDwlV8fW1HubME";
-        let db = [];
+   <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwAckIZVCXCFiryql-BYu1xabX9zlXybIx6x59CGGmc9C4_zn8ouIjsIuIKK1aBGXOL-w/exec";
+    const GEMINI_API_KEY = "AIzaSyBpd8uxPnEdjc1073sYHBDwlV8fW1HubME";
+    let db = [];
+    const fmt = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        async function sincronizarBD() {
-            document.getElementById('loader').classList.remove('hidden');
+    async function sincronizarBD() {
+        document.getElementById('loader').classList.remove('hidden');
+        try {
             const res = await fetch(API_URL + "?action=ler");
             db = await res.json();
-            document.getElementById('loader').classList.add('hidden');
             renderizarUI();
-        }
+        } catch(e) { alert("Erro ao carregar dados: " + e); }
+        document.getElementById('loader').classList.add('hidden');
+    }
 
-        async function processarComIA() {
-            const texto = document.getElementById("textoBruto").value;
-            const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ contents: [{ parts: [{ text: "Extraia os dados de despesas em formato JSON simples: " + texto }] }] })
-            });
-            const data = await res.json();
-            alert("IA Processada! Verifique a sincronização.");
-            sincronizarBD();
-        }
+    async function salvarRegistro(e) {
+        e.preventDefault();
+        const r = {
+            id: document.getElementById("regId").value || "",
+            ano: document.getElementById("regAno").value,
+            evento: document.getElementById("regEvento").value,
+            conselheiro: document.getElementById("regConselheiro").value,
+            pass: 0, diar: 0, hosp: 0, alim: 0 // Simplificado para o seu form atual
+        };
+        await fetch(API_URL + `?action=salvar&dados=${encodeURIComponent(JSON.stringify(r))}`);
+        alert("Salvo!");
+        sincronizarBD();
+    }
 
-        function switchView(id, el) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.getElementById('view-' + id).classList.add('active');
-        }
+    async function processarComIA() {
+        const texto = document.getElementById("textoBruto").value;
+        const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ contents: [{ parts: [{ text: "Extraia os dados em JSON simples: " + texto }] }] })
+        });
+        const data = await res.json();
+        alert("Processado! Verifique a planilha.");
+        sincronizarBD();
+    }
 
-        function renderizarUI() { /* Lógica de renderização de tabelas e gráficos */ }
+    function renderizarUI() {
+        const tbody = document.getElementById("tabelaCRUD");
+        tbody.innerHTML = "";
+        db.forEach(r => {
+            tbody.innerHTML += `<tr><td>${r.ano}</td><td>${r.evento}</td><td>${r.conselheiro}</td></tr>`;
+        });
+    }
 
-        window.onload = sincronizarBD;
-    </script>
+    function switchView(id, el) {
+        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('view-' + id).classList.add('active');
+        document.querySelectorAll('.sidebar-btn-main, .nav-item').forEach(i => i.classList.remove('active'));
+        if(el) el.classList.add('active');
+    }
+
+    window.onload = sincronizarBD;
+</script>
 </body>
 </html>

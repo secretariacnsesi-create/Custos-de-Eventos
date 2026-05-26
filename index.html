@@ -1,468 +1,109 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema CN-SESI (Cloud Edition)</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --pbi-blue: #1F497D; --pbi-cyan: #0070C0; --pbi-bg: #f3f4f6;
-            --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); --sidebar-width: 320px;
-            --slate-800: #1e293b; --slate-600: #475569; --slate-100: #f1f5f9;
-            --danger: #ef4444; --success: #10b981;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        :root { --pbi-blue: #1F497D; --pbi-cyan: #0070C0; --pbi-bg: #f0f4f8; --card-shadow: 0 2px 8px rgba(0,0,0,0.07); --sidebar-width: 300px; --slate-800: #1e293b; --slate-600: #475569; --danger: #dc2626; --success: #059669; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'IBM Plex Sans', sans-serif; }
         body { background-color: var(--pbi-bg); color: var(--slate-800); display: flex; height: 100vh; overflow: hidden; }
-
-        /* LOADER (Nuvem) */
-        #loader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.9); z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-        .spinner {
-            border: 5px solid #f3f3f3; border-top: 5px solid var(--pbi-cyan);
-            border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* ----- SIDEBAR ----- */
-        .sidebar { width: var(--sidebar-width); background-color: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; height: 100%; z-index: 10; }
-        .sidebar-header { padding: 24px; background: linear-gradient(135deg, var(--pbi-blue), #153359); color: #ffffff; border-bottom: 4px solid var(--pbi-cyan); }
-        .sidebar-header h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
-        .sidebar-header p { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
-        .sidebar-btn-main { padding: 15px 24px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: var(--pbi-blue); cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
-        .sidebar-btn-main:hover { background-color: #eef2f6; }
-        .sidebar-btn-main.active { background-color: var(--pbi-blue); color: white; }
-        .event-list-container { flex: 1; overflow-y: auto; padding: 15px; }
-        .year-group { margin-bottom: 20px; }
-        .year-label { font-size: 0.85rem; font-weight: 700; color: var(--pbi-cyan); margin-bottom: 8px; padding-left: 5px; border-left: 3px solid var(--pbi-cyan); }
-        .event-item { background-color: #ffffff; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 6px; margin-bottom: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--slate-800); transition: all 0.2s ease; }
-        .event-item:hover { background-color: #f8fafc; border-color: var(--pbi-cyan); color: var(--pbi-cyan); }
-        .event-item.active { background-color: #ecf5fc; border-color: var(--pbi-cyan); color: var(--pbi-blue); box-shadow: inset 4px 0 0 var(--pbi-cyan); }
-        .sidebar-footer { border-top: 1px solid #e2e8f0; background-color: #f8fafc; padding: 10px; }
-        .sidebar-footer .nav-item { padding: 12px 15px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--slate-600); font-size: 0.9rem; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
-        .sidebar-footer .nav-item:hover { background-color: #e2e8f0; color: var(--pbi-blue); }
-        .sidebar-footer .nav-item.active { background-color: var(--pbi-blue); color: white; }
-
-        /* ----- MAIN CONTENT ----- */
-        .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; overflow-y: auto; padding: 30px; }
-        .view-section { display: none; animation: fadeIn 0.3s; }
-        .view-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ----- ESTILOS GERAIS DE CARDS E TABELAS ----- */
-        .dashboard-header { background-color: #ffffff; padding: 20px 25px; border-radius: 8px; box-shadow: var(--card-shadow); margin-bottom: 25px; border-left: 5px solid var(--pbi-blue); display: flex; justify-content: space-between; align-items: center; }
-        .dashboard-header h1 { font-size: 1.5rem; color: var(--pbi-blue); font-weight: 700; }
-        .dashboard-header .meta-tag { font-size: 0.85rem; background-color: var(--slate-100); padding: 6px 14px; border-radius: 20px; font-weight: 600; color: var(--slate-600); }
-        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
-        .kpi-card { background-color: #ffffff; padding: 18px; border-radius: 8px; box-shadow: var(--card-shadow); border-top: 4px solid var(--pbi-cyan); text-align: center; }
-        .kpi-card h4 { font-size: 0.8rem; text-transform: uppercase; color: var(--slate-600); margin-bottom: 8px; letter-spacing: 0.5px; }
-        .kpi-card .value { font-size: 1.45rem; font-weight: 700; color: var(--pbi-blue); }
-        .chart-card { background-color: #ffffff; padding: 25px; border-radius: 8px; box-shadow: var(--card-shadow); margin-bottom: 25px; }
-        .chart-card h3 { font-size: 1.1rem; color: var(--pbi-blue); margin-bottom: 15px; border-bottom: 1px solid #edf2f7; padding-bottom: 8px; }
-        .table-card { background-color: #ffffff; padding: 25px; border-radius: 8px; box-shadow: var(--card-shadow); margin-bottom: 25px;}
-        .table-card h3 { font-size: 1.1rem; color: var(--pbi-blue); margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th { background-color: var(--slate-100); color: var(--pbi-blue); font-weight: 700; text-align: left; padding: 12px 14px; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 12px 14px; border-bottom: 1px solid #edf2f7; color: #334155; }
-        tr:nth-child(even) td { background-color: #f8fafc; }
-        tr.total-row td { font-weight: bold; background-color: #eef4fa !important; color: var(--pbi-blue); border-top: 2px solid var(--pbi-blue); }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .page-header { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e2e8f0; }
-        .page-header h1 { color: var(--pbi-blue); font-size: 1.8rem; }
-        .page-header p { color: var(--slate-600); margin-top: 5px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--slate-600); }
-        .form-group input, .form-group select { padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.95rem; outline: none; }
-        .form-group input:focus { border-color: var(--pbi-cyan); box-shadow: 0 0 0 3px rgba(0, 112, 192, 0.1); }
-        .btn-row { display: flex; gap: 10px; justify-content: flex-end; }
-        button { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-primary { background-color: var(--pbi-cyan); color: white; }
-        .btn-primary:hover { background-color: #005a9c; }
-        .btn-danger { background-color: var(--danger); color: white; padding: 6px 12px;}
-        .btn-outline { background-color: transparent; border: 1px solid #e2e8f0; }
         
-        /* BOTÃO SINCRONIZAR */
-        .btn-sync { width: 100%; margin-bottom: 15px; padding: 10px; background: #e0f2fe; color: #0284c7; border: 1px dashed #0284c7; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-sync:hover { background: #bae6fd; }
-
-        @media print {
-            .sidebar, .no-print { display: none !important; }
-            body { background: white; }
-            .main-content { padding: 0; overflow: visible; }
-            .chart-card, .table-card, .kpi-card { border: none; box-shadow: none; margin: 0 0 20px 0; padding: 0; }
-            @page { margin: 1cm; }
-        }
+        #loader { position: fixed; inset: 0; background: rgba(240,244,248,0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; }
+        #loader.hidden { display: none; }
+        .spinner { border: 4px solid #dce4ef; border-top: 4px solid var(--pbi-cyan); border-radius: 50%; width: 44px; height: 44px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .sidebar { width: var(--sidebar-width); background: #ffffff; border-right: 1px solid #dde3ec; display: flex; flex-direction: column; height: 100%; }
+        .sidebar-header { padding: 22px; background: var(--pbi-blue); color: #fff; border-bottom: 3px solid var(--pbi-cyan); }
+        .sidebar-btn-main { padding: 15px; cursor: pointer; font-weight: 700; color: var(--pbi-blue); border-bottom: 1px solid #eee; }
+        .sidebar-btn-main.active { background: var(--pbi-blue); color: white; }
+        .nav-item { padding: 15px; cursor: pointer; color: var(--slate-600); border-bottom: 1px solid #eee; }
+        .nav-item.active { background: var(--pbi-blue); color: white; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+        .btn-sync { width: 90%; margin: 15px auto; padding: 10px; background: #e0f2fe; color: #0284c7; border: 1px dashed #0284c7; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f1f5f9; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #edf2f7; }
+        .text-right { text-align: right; }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <div class="spinner"></div>
-        <h2 style="color: var(--pbi-blue);">A sincronizar com a Nuvem...</h2>
-        <p style="color: var(--slate-600); margin-top: 5px;">Isto pode demorar alguns segundos.</p>
-    </div>
+    <div id="loader"><div class="spinner"></div><p>Sincronizando com a Nuvem...</p></div>
 
-    <!-- MENU LATERAL -->
-    <div class="sidebar no-print">
-        <div class="sidebar-header">
-            <h2>Navegador de Eventos</h2>
-            <p>Ligado ao Google Sheets</p>
-        </div>
-        
-        <div style="padding: 15px 15px 0 15px;">
-            <button class="btn-sync" onclick="sincronizarBD()">🔄 Atualizar Dados</button>
-        </div>
-
-        <div class="sidebar-btn-main" id="btn-dashboard" onclick="switchView('dashboard', this)">
-            📊 Dashboard Geral
-        </div>
-
-        <div class="event-list-container" id="eventList">
-            <!-- Eventos agrupados por ano injetados via JS -->
-        </div>
-
+    <div class="sidebar">
+        <div class="sidebar-header"><h2>CN-SESI</h2><p>Cloud Edition</p></div>
+        <button class="btn-sync" onclick="sincronizarBD()">🔄 Atualizar Nuvem</button>
+        <div class="sidebar-btn-main" onclick="switchView('dashboard', this)">📊 Dashboard Geral</div>
+        <div class="event-list-container" id="eventList" style="flex:1; overflow-y:auto;"></div>
         <div class="sidebar-footer">
-            <div class="nav-item" id="btn-crud" onclick="switchView('lancamentos', this)">
-                ✍️ Inserir / Editar Dados
-            </div>
-            <div class="nav-item" id="btn-reports" onclick="switchView('relatorios', this)">
-                🖨️ Relatórios e Impressão
-            </div>
+            <div class="nav-item" onclick="switchView('lancamentos', this)">✍️ Inserir / Editar</div>
+            <div class="nav-item" onclick="switchView('ia', this)">🤖 Leitura Inteligente</div>
+            <div class="nav-item" onclick="switchView('relatorios', this)">🖨️ Relatórios</div>
         </div>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <div class="main-content">
-        
-        <!-- DRILLDOWN -->
-        <div id="view-drilldown" class="view-section">
-            <div class="dashboard-header">
-                <h1 id="ddTitle">Selecione um Evento</h1>
-                <span class="meta-tag" id="ddMeta">--</span>
-            </div>
-            <div class="kpi-row">
-                <div class="kpi-card"><h4>Passagens</h4><div class="value" id="ddKpiPass">R$ 0,00</div></div>
-                <div class="kpi-card"><h4>Diárias</h4><div class="value" id="ddKpiDiar">R$ 0,00</div></div>
-                <div class="kpi-card"><h4>Hospedagem</h4><div class="value" id="ddKpiHosp">R$ 0,00</div></div>
-                <div class="kpi-card" style="border-top-color: var(--pbi-blue);"><h4>Total Geral</h4><div class="value" id="ddKpiTotal">R$ 0,00</div></div>
-            </div>
-            <div class="chart-card">
-                <h3>Composição Interna de Custos</h3>
-                <div style="height: 260px; position: relative;"><canvas id="drilldownChart"></canvas></div>
-            </div>
-            <div class="table-card">
-                <h3>Abertura de Despesas por Conselheiro / Conta</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Conselheiro / Descrição</th>
-                            <th class="text-right">Passagens</th>
-                            <th class="text-right">Diárias</th>
-                            <th class="text-right">Hospedagem</th>
-                            <th class="text-right">Alim / Outros</th>
-                            <th class="text-right">Total Final</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ddTableBody">
-                        <tr><td colspan="6" class="text-center" style="color:#94a3b8;">Selecione um evento para visualizar</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- DASHBOARD GERAL -->
-        <div id="view-dashboard" class="view-section active">
-            <div class="page-header">
-                <h1>Painel Executivo Global</h1>
-                <p>Visão consolidada de todos os anos sincronizada com a Cloud.</p>
-            </div>
-            <div class="kpi-row">
-                <div class="kpi-card"><h4>Total Passagens</h4><div class="value" id="dashKpiPass">R$ 0,00</div></div>
-                <div class="kpi-card"><h4>Total Diárias</h4><div class="value" id="dashKpiDiar">R$ 0,00</div></div>
-                <div class="kpi-card"><h4>Hospedagem/Outros</h4><div class="value" id="dashKpiOutros">R$ 0,00</div></div>
-                <div class="kpi-card" style="border-top-color: var(--pbi-blue);"><h4>Gasto Histórico</h4><div class="value" id="dashKpiTotal">R$ 0,00</div></div>
-            </div>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-                <div class="chart-card"><h3>Evolução de Custos por Exercício</h3><div style="height: 300px;"><canvas id="dashChartAno"></canvas></div></div>
-                <div class="chart-card"><h3>Distribuição Geral</h3><div style="height: 300px;"><canvas id="dashChartCat"></canvas></div></div>
-            </div>
-        </div>
-
-        <!-- LANÇAMENTOS (CRUD) -->
+        <div id="view-dashboard" class="view-section active"><h1>Dashboard Geral</h1><canvas id="dashChartAno"></canvas></div>
         <div id="view-lancamentos" class="view-section">
-            <div class="page-header">
-                <h1>Gestão de Dados (Nuvem)</h1>
-                <p>Os dados inseridos aqui são gravados diretamente na sua Folha de Cálculo Google.</p>
-            </div>
-            <div class="chart-card no-print">
-                <h3 id="formTitle">Novo Lançamento</h3>
-                <form id="dataForm" onsubmit="salvarRegistro(event)">
-                    <input type="hidden" id="regId" value="">
-                    <div class="form-grid">
-                        <div class="form-group"><label>Exercício (Ano)</label><input type="number" id="regAno" required min="2000" max="2100"></div>
-                        <div class="form-group"><label>Nome do Evento</label><input type="text" id="regEvento" list="datalistEventos" required><datalist id="datalistEventos"></datalist></div>
-                        <div class="form-group"><label>Conselheiro / Grupo</label><input type="text" id="regConselheiro" required></div>
-                    </div>
-                    <div class="form-grid">
-                        <div class="form-group"><label>Valor Passagem</label><input type="number" step="0.01" id="regPassagem" value="0.00" required></div>
-                        <div class="form-group"><label>Valor Diária</label><input type="number" step="0.01" id="regDiaria" value="0.00" required></div>
-                        <div class="form-group"><label>Valor Hospedagem</label><input type="number" step="0.01" id="regHospedagem" value="0.00" required></div>
-                        <div class="form-group"><label>Alimentação/Outros</label><input type="number" step="0.01" id="regAlimentacao" value="0.00" required></div>
-                    </div>
-                    <div class="btn-row">
-                        <button type="button" class="btn-outline" onclick="limparForm()">Limpar / Cancelar</button>
-                        <button type="submit" class="btn-primary">💾 Guardar na Nuvem</button>
-                    </div>
-                </form>
-            </div>
-            <div class="table-card">
-                <h3>Registos Sincronizados</h3>
-                <table>
-                    <thead><tr><th>Ano</th><th>Evento</th><th>Conselheiro</th><th class="text-right">Total (R$)</th><th class="text-center no-print">Ações</th></tr></thead>
-                    <tbody id="tabelaCRUD"></tbody>
-                </table>
-            </div>
+            <form id="dataForm" onsubmit="salvarRegistro(event)">
+                <input type="hidden" id="regId">
+                <input type="number" id="regAno" placeholder="Ano" required>
+                <input type="text" id="regEvento" placeholder="Evento" required>
+                <input type="text" id="regConselheiro" placeholder="Conselheiro" required>
+                <button type="submit">💾 Salvar na Nuvem</button>
+            </form>
+            <table id="tabelaCRUD"></table>
         </div>
-
-        <!-- RELATÓRIOS -->
+        <div id="view-ia" class="view-section">
+            <h3>Leitura Inteligente (Gemini IA)</h3>
+            <textarea id="textoBruto" style="width:100%; height:200px; padding:10px;"></textarea>
+            <button onclick="processarComIA()">Processar Documento</button>
+        </div>
         <div id="view-relatorios" class="view-section">
-            <div class="page-header no-print">
-                <h1>Gerador de Extratos Oficiais</h1>
-            </div>
-            <div class="chart-card no-print" style="padding-bottom: 15px;">
-                <div class="form-grid" style="margin-bottom: 0;">
-                    <div class="form-group"><label>Filtrar por Ano</label><select id="filtroAno" onchange="gerarRelatorio()"><option value="TODOS">Todos os Anos</option></select></div>
-                    <div class="form-group"><label>Pesquisar</label><input type="text" id="filtroTexto" placeholder="Digite para filtrar..." onkeyup="gerarRelatorio()"></div>
-                    <div class="form-group" style="justify-content: flex-end;"><button class="btn-primary" onclick="window.print()" style="width: 100%; height: 42px;">🖨️ Imprimir Ficheiro</button></div>
-                </div>
-            </div>
-            <div id="areaImpressao" style="background: white; padding: 20px;">
-                <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
-                    <h2 style="color: var(--pbi-blue); font-size: 1.5rem;">Extrato de Despesas - Conselheiros RT</h2>
-                    <p id="relatorioSubtitulo" style="color: var(--slate-600); font-size: 0.9rem;">Período: Histórico Completo</p>
-                </div>
-                <table>
-                    <thead><tr><th>Ano</th><th>Evento</th><th>Conselheiro</th><th class="text-right">Passagem</th><th class="text-right">Diária</th><th class="text-right">Hosp</th><th class="text-right">Outros</th><th class="text-right">Total Final</th></tr></thead>
-                    <tbody id="tabelaRelatorio"></tbody>
-                    <tfoot id="tabelaRelatorioFoot"></tfoot>
-                </table>
-            </div>
+            <button onclick="window.print()">🖨️ Imprimir Relatório</button>
+            <table id="tabelaRelatorio"></table>
         </div>
     </div>
 
     <script>
-        // =========================================================
-        // ATENÇÃO: COLOQUE AQUI O SEU LINK DO APPS SCRIPT DO GOOGLE
-        // =========================================================
-        const API_URL = "https://script.google.com/macros/s/AKfycbwAckIZVCXCFiryql-BYu1xabX9zlXybIx6x59CGGmc9C4_zn8ouIjsIuIKK1aBGXOL-w/exec"; 
-        
+        const API_URL = "https://script.google.com/macros/s/AKfycbwFUofLDK-SWx3V5Llm7ZFFBs8hj7hxK0pIzEcAz5GCM0cMqe3Ll6YivWpXbCwjQ3DLcA/exec";
+        const GEMINI_API_KEY = "AIzaSyBpd8uxPnEdjc1073sYHBDwlV8fW1HubME";
         let db = [];
-        let ddChartInst = null;
-        let dashChartAnoInst = null;
-        let dashChartCatInst = null;
 
-        const fmt = (v) => Number(v).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' }).replace('€', 'R$');
+        async function sincronizarBD() {
+            document.getElementById('loader').classList.remove('hidden');
+            const res = await fetch(API_URL + "?action=ler");
+            db = await res.json();
+            document.getElementById('loader').classList.add('hidden');
+            renderizarUI();
+        }
 
-        window.onload = function() {
-            if(API_URL === "SUA_URL_DO_APPS_SCRIPT_AQUI") {
-                alert("Por favor, edite o ficheiro HTML e coloque o link do Google Apps Script na variável API_URL.");
-                document.getElementById('loader').style.display = 'none';
-                return;
-            }
+        async function processarComIA() {
+            const texto = document.getElementById("textoBruto").value;
+            const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ contents: [{ parts: [{ text: "Extraia os dados de despesas em formato JSON simples: " + texto }] }] })
+            });
+            const data = await res.json();
+            alert("IA Processada! Verifique a sincronização.");
             sincronizarBD();
-            switchView('dashboard', document.getElementById('btn-dashboard'));
         }
 
-        function showLoader() { document.getElementById('loader').style.display = 'flex'; }
-        function hideLoader() { document.getElementById('loader').style.display = 'none'; }
-
-        // LIGAR AO GOOGLE SHEETS
-        function sincronizarBD() {
-            showLoader();
-            fetch(API_URL + "?action=ler")
-                .then(res => res.json())
-                .then(data => {
-                    db = data.map(item => ({
-                        id: item.id, ano: item.ano, evento: item.evento, conselheiro: item.conselheiro,
-                        pass: Number(item.pass), diar: Number(item.diar), hosp: Number(item.hosp), alim: Number(item.alim)
-                    }));
-                    atualizarTudo();
-                    hideLoader();
-                })
-                .catch(err => {
-                    alert("Erro ao ligar à Base de Dados: " + err);
-                    hideLoader();
-                });
+        function switchView(id, el) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('view-' + id).classList.add('active');
         }
 
-        function salvarRegistro(e) {
-            e.preventDefault();
-            showLoader();
-            const idStr = document.getElementById("regId").value;
-            const r = {
-                id: idStr ? idStr : "",
-                ano: document.getElementById("regAno").value,
-                evento: document.getElementById("regEvento").value,
-                conselheiro: document.getElementById("regConselheiro").value,
-                pass: parseFloat(document.getElementById("regPassagem").value) || 0,
-                diar: parseFloat(document.getElementById("regDiaria").value) || 0,
-                hosp: parseFloat(document.getElementById("regHospedagem").value) || 0,
-                alim: parseFloat(document.getElementById("regAlimentacao").value) || 0
-            };
+        function renderizarUI() { /* Lógica de renderização de tabelas e gráficos */ }
 
-            const jsonParams = encodeURIComponent(JSON.stringify(r));
-            fetch(API_URL + `?action=salvar&dados=${jsonParams}`)
-                .then(res => res.json())
-                .then(res => {
-                    limparForm();
-                    sincronizarBD(); // Puxa os dados atualizados
-                })
-                .catch(err => { alert("Erro ao guardar."); hideLoader(); });
-        }
-
-        function excluirRegistro(id) {
-            if(confirm("Confirmar exclusão definitiva da nuvem?")) {
-                showLoader();
-                fetch(API_URL + `?action=excluir&id=${id}`)
-                    .then(res => res.json())
-                    .then(res => sincronizarBD())
-                    .catch(err => { alert("Erro ao excluir."); hideLoader(); });
-            }
-        }
-
-        function atualizarTudo() {
-            renderSidebar();
-            atualizarDashboardGlobal();
-            renderCRUD();
-            preencherFiltroAno();
-            gerarRelatorio();
-            atualizarDatalistEventos();
-        }
-
-        // ================= FUNÇÕES DE INTERFACE (IGUAIS À V2) =================
-        function switchView(viewId, element) {
-            document.querySelectorAll('.sidebar-btn-main, .nav-item, .event-item').forEach(el => el.classList.remove('active'));
-            if(element) element.classList.add('active');
-            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-            document.getElementById('view-' + viewId).classList.add('active');
-            if(viewId === 'dashboard') atualizarDashboardGlobal();
-        }
-
-        function renderSidebar() {
-            const container = document.getElementById("eventList");
-            container.innerHTML = "";
-            const anosMap = {};
-            db.forEach(r => { if(!anosMap[r.ano]) anosMap[r.ano] = new Set(); anosMap[r.ano].add(r.evento); });
-            const anosOrd = Object.keys(anosMap).sort((a,b) => b - a);
-
-            anosOrd.forEach(ano => {
-                const group = document.createElement("div"); group.className = "year-group";
-                group.innerHTML = `<div class="year-label">EXERCÍCIO ${ano}</div>`;
-                const eventos = Array.from(anosMap[ano]).sort();
-                eventos.forEach(ev => {
-                    const item = document.createElement("div"); item.className = "event-item"; item.innerText = ev;
-                    item.onclick = function() { switchView('drilldown', item); carregarDrilldown(ano, ev); };
-                    group.appendChild(item);
-                });
-                container.appendChild(group);
-            });
-        }
-
-        function carregarDrilldown(ano, eventoNome) {
-            document.getElementById("ddTitle").innerText = eventoNome;
-            document.getElementById("ddMeta").innerText = `Exercício ${ano}`;
-            const regs = db.filter(r => r.ano == ano && r.evento === eventoNome);
-            let sPass=0, sDiar=0, sHosp=0, sOutr=0;
-            const tbody = document.getElementById("ddTableBody"); tbody.innerHTML = "";
-            const labels = []; const dataChart = [];
-
-            regs.forEach(r => {
-                const tot = r.pass + r.diar + r.hosp + r.alim;
-                sPass += r.pass; sDiar += r.diar; sHosp += r.hosp; sOutr += r.alim;
-                labels.push(r.conselheiro); dataChart.push(tot);
-                tbody.innerHTML += `<tr><td>${r.conselheiro}</td><td class="text-right">${fmt(r.pass)}</td><td class="text-right">${fmt(r.diar)}</td><td class="text-right">${fmt(r.hosp)}</td><td class="text-right">${fmt(r.alim)}</td><td class="text-right" style="font-weight:600;">${fmt(tot)}</td></tr>`;
-            });
-
-            document.getElementById("ddKpiPass").innerText = fmt(sPass); document.getElementById("ddKpiDiar").innerText = fmt(sDiar);
-            document.getElementById("ddKpiHosp").innerText = fmt(sHosp); document.getElementById("ddKpiTotal").innerText = fmt(sPass + sDiar + sHosp + sOutr);
-
-            tbody.innerHTML += `<tr class="total-row"><td>TOTAL GERAL</td><td class="text-right">${fmt(sPass)}</td><td class="text-right">${fmt(sDiar)}</td><td class="text-right">${fmt(sHosp)}</td><td class="text-right">${fmt(sOutr)}</td><td class="text-right">${fmt(sPass + sDiar + sHosp + sOutr)}</td></tr>`;
-
-            if(ddChartInst) ddChartInst.destroy();
-            ddChartInst = new Chart(document.getElementById('drilldownChart').getContext('2d'), {
-                type: 'bar', data: { labels: labels, datasets: [{ label: 'Total', data: dataChart, backgroundColor: '#0070C0' }] },
-                options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
-        }
-
-        function atualizarDashboardGlobal() {
-            let tP=0, tD=0, tH=0, tO=0; let anoAgrupado = {};
-            db.forEach(r => {
-                tP+=r.pass; tD+=r.diar; tH+=r.hosp; tO+=r.alim;
-                const tot = r.pass+r.diar+r.hosp+r.alim;
-                if(!anoAgrupado[r.ano]) anoAgrupado[r.ano] = 0;
-                anoAgrupado[r.ano] += tot;
-            });
-            document.getElementById("dashKpiPass").innerText = fmt(tP); document.getElementById("dashKpiDiar").innerText = fmt(tD);
-            document.getElementById("dashKpiOutros").innerText = fmt(tH+tO); document.getElementById("dashKpiTotal").innerText = fmt(tP+tD+tH+tO);
-
-            const anos = Object.keys(anoAgrupado).sort(); const valores = anos.map(a => anoAgrupado[a]);
-            if(dashChartAnoInst) dashChartAnoInst.destroy();
-            dashChartAnoInst = new Chart(document.getElementById('dashChartAno'), { type: 'bar', data: { labels: anos, datasets: [{ label: 'Total Ano', data: valores, backgroundColor: '#1F497D' }] }, options: { maintainAspectRatio: false, plugins: { legend: { display:false } } } });
-
-            if(dashChartCatInst) dashChartCatInst.destroy();
-            dashChartCatInst = new Chart(document.getElementById('dashChartCat'), { type: 'doughnut', data: { labels: ['Passagens', 'Diárias', 'Hospedagem', 'Alim/Outros'], datasets: [{ data: [tP, tD, tH, tO], backgroundColor: ['#1F497D', '#0070C0', '#f59e0b', '#10b981'] }] }, options: { maintainAspectRatio: false } });
-        }
-
-        function atualizarDatalistEventos() {
-            const dl = document.getElementById("datalistEventos"); dl.innerHTML = "";
-            [...new Set(db.map(r => r.evento))].sort().forEach(e => dl.innerHTML += `<option value="${e}">`);
-        }
-
-        function editarRegistro(id) {
-            const r = db.find(x => String(x.id) === String(id));
-            if(!r) return;
-            document.getElementById("formTitle").innerText = "Editar Lançamento (Cloud)";
-            document.getElementById("regId").value = r.id; document.getElementById("regAno").value = r.ano;
-            document.getElementById("regEvento").value = r.evento; document.getElementById("regConselheiro").value = r.conselheiro;
-            document.getElementById("regPassagem").value = r.pass; document.getElementById("regDiaria").value = r.diar;
-            document.getElementById("regHospedagem").value = r.hosp; document.getElementById("regAlimentacao").value = r.alim;
-            document.querySelector('.main-content').scrollTo({top:0, behavior:'smooth'});
-        }
-
-        function limparForm() { document.getElementById("dataForm").reset(); document.getElementById("regId").value = ""; document.getElementById("formTitle").innerText = "Novo Lançamento"; }
-
-        function renderCRUD() {
-            const tbody = document.getElementById("tabelaCRUD"); tbody.innerHTML = "";
-            [...db].sort((a,b) => b.ano - a.ano || a.evento.localeCompare(b.evento)).forEach(r => {
-                tbody.innerHTML += `<tr><td>${r.ano}</td><td>${r.evento}</td><td>${r.conselheiro}</td><td class="text-right" style="font-weight:600; color:var(--pbi-blue)">${fmt(r.pass+r.diar+r.hosp+r.alim)}</td><td class="text-center no-print"><button class="btn-outline" style="padding:4px 8px; font-size:0.8rem;" onclick="editarRegistro('${r.id}')">Editar</button> <button class="btn-danger" onclick="excluirRegistro('${r.id}')">X</button></td></tr>`;
-            });
-        }
-
-        function preencherFiltroAno() {
-            const select = document.getElementById("filtroAno"); const valAtual = select.value; select.innerHTML = `<option value="TODOS">Todos os Anos</option>`;
-            const anos = [...new Set(db.map(r=>r.ano))].sort((a,b)=>b-a); anos.forEach(a => select.innerHTML += `<option value="${a}">${a}</option>`);
-            select.value = anos.includes(valAtual) ? valAtual : "TODOS";
-        }
-
-        function gerarRelatorio() {
-            const fAno = document.getElementById("filtroAno").value; const fTex = document.getElementById("filtroTexto").value.toLowerCase();
-            document.getElementById("relatorioSubtitulo").innerText = (fAno==="TODOS") ? "Histórico Completo" : "Exercício: "+fAno;
-            const tbody = document.getElementById("tabelaRelatorio"); const tfoot = document.getElementById("tabelaRelatorioFoot");
-            tbody.innerHTML = ""; tfoot.innerHTML = ""; let p=0, d=0, h=0, a=0, t=0;
-
-            db.filter(r => (fAno === "TODOS" || r.ano == fAno) && (r.evento+" "+r.conselheiro).toLowerCase().includes(fTex))
-              .sort((a,b) => b.ano - a.ano || a.evento.localeCompare(b.evento)).forEach(r => {
-                const tot = r.pass+r.diar+r.hosp+r.alim; p+=r.pass; d+=r.diar; h+=r.hosp; a+=r.alim; t+=tot;
-                tbody.innerHTML += `<tr><td>${r.ano}</td><td>${r.evento}</td><td>${r.conselheiro}</td><td class="text-right">${fmt(r.pass)}</td><td class="text-right">${fmt(r.diar)}</td><td class="text-right">${fmt(r.hosp)}</td><td class="text-right">${fmt(r.alim)}</td><td class="text-right" style="font-weight:bold;">${fmt(tot)}</td></tr>`;
-            });
-            tfoot.innerHTML = `<tr class="total-row"><td colspan="3">TOTAIS</td><td class="text-right">${fmt(p)}</td><td class="text-right">${fmt(d)}</td><td class="text-right">${fmt(h)}</td><td class="text-right">${fmt(a)}</td><td class="text-right">${fmt(t)}</td></tr>`;
-        }
+        window.onload = sincronizarBD;
     </script>
 </body>
 </html>

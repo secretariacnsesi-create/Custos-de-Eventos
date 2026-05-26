@@ -61,10 +61,16 @@
             <table id="tabelaCRUD"></table>
         </div>
         <div id="view-ia" class="view-section">
-            <h3>Leitura Inteligente (Gemini IA)</h3>
-            <textarea id="textoBruto" style="width:100%; height:200px; padding:10px;"></textarea>
-            <button onclick="processarComIA()">Processar Documento</button>
-        </div>
+    <div class="page-header">
+        <h1>Leitura Inteligente (IA)</h1>
+        <p>Arraste seu arquivo (.txt) ou cole o texto aqui:</p>
+    </div>
+    <div class="chart-card">
+        <input type="file" id="fileInput" accept=".txt" style="margin-bottom:10px;">
+        <textarea id="textoBruto" style="width:100%; height:200px; padding:10px;" placeholder="O conteúdo aparecerá aqui após selecionar o arquivo..."></textarea>
+        <button class="btn-primary" onclick="processarComIA()" style="margin-top:10px;">Processar e Inserir na Nuvem</button>
+    </div>
+</div>
         <div id="view-relatorios" class="view-section">
             <button onclick="window.print()">🖨️ Imprimir Relatório</button>
             <table id="tabelaRelatorio"></table>
@@ -127,6 +133,17 @@
         document.querySelectorAll('.sidebar-btn-main, .nav-item').forEach(i => i.classList.remove('active'));
         if(el) el.classList.add('active');
     }
+
+       document.getElementById('fileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('textoBruto').value = e.target.result;
+    };
+    reader.readAsText(file);
+});
 
     window.onload = sincronizarBD;
 </script>
